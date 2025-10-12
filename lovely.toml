@@ -329,10 +329,10 @@ position = "before"
 line_prepend = "$indent"
 payload = '''
 if Big then
-	if type(self.strings[k].W) == 'table' then
+	if type(self.strings[k].W) == 'cdata' then
 		self.strings[k].W = to_number(self.strings[k].W)
 	end
-	if type(self.strings[k].H) == 'table' then
+	if type(self.strings[k].H) == 'cdata' then
 		self.strings[k].H = to_number(self.strings[k].H)
 	end
 end
@@ -416,16 +416,18 @@ self.VT.h = to_number(self.VT.h) end
 '''
 match_indent = true
 
+# must be always applied, unsure why
 [[patches]]
 [patches.pattern]
 target = "functions/misc_functions.lua"
 pattern = "function prep_draw(moveable, scale, rotate, offset)"
 position = "after"
 payload = '''
-if Big and G.STATE == G.STATES.MENU then moveable.VT.x = to_number(moveable.VT.x)
+moveable.VT.x = to_number(moveable.VT.x)
 moveable.VT.y = to_number(moveable.VT.y)
 moveable.VT.w = to_number(moveable.VT.w)
-moveable.VT.h = to_number(moveable.VT.h) end
+moveable.VT.h = to_number(moveable.VT.h)
+moveable.VT.scale = to_number(moveable.VT.scale)
 '''
 match_indent = true
 
@@ -729,12 +731,12 @@ payload = '''
 if effects.jokers.Emult_mod then mult = mod_mult(mult^effects.jokers.Emult_mod);extras.mult = true end
 if effects.jokers.EEmult_mod then mult = mod_mult(mult:arrow(2, effects.jokers.EEmult_mod));extras.mult = true end
 if effects.jokers.EEEmult_mod then mult = mod_mult(mult:arrow(3, effects.jokers.EEEmult_mod));extras.mult = true end
-if effects.jokers.hypermult_mod and type(effects.jokers.hypermult_mod) == 'table' then mult = mod_mult(mult:arrow(effects.jokers.hypermult_mod[1], effects.jokers.hypermult_mod[2]));extras.mult = true end
+if effects.jokers.hypermult_mod and type(effects.jokers.hypermult_mod) == 'cdata' then mult = mod_mult(mult:arrow(effects.jokers.hypermult_mod[1], effects.jokers.hypermult_mod[2]));extras.mult = true end
 if effects.jokers.Xchip_mod then hand_chips = mod_chips(hand_chips*effects.jokers.Xchip_mod);extras.hand_chips = true end
 if effects.jokers.Echip_mod then hand_chips = mod_chips(hand_chips^effects.jokers.Echip_mod);extras.hand_chips = true end
 if effects.jokers.EEchip_mod then hand_chips = mod_chips(hand_chips:arrow(2, effects.jokers.EEchip_mod));extras.hand_chips = true end
 if effects.jokers.EEEchip_mod then hand_chips = mod_chips(hand_chips:arrow(3, effects.jokers.EEEchip_mod));extras.hand_chips = true end
-if effects.jokers.hyperchip_mod and type(effects.jokers.hyperchip_mod) == 'table' then hand_chips = mod_chips(hand_chips:arrow(effects.jokers.hyperchip_mod[1], effects.jokers.hyperchip_mod[2]));extras.hand_chips = true end
+if effects.jokers.hyperchip_mod and type(effects.jokers.hyperchip_mod) == 'cdata' then hand_chips = mod_chips(hand_chips:arrow(effects.jokers.hyperchip_mod[1], effects.jokers.hyperchip_mod[2]));extras.hand_chips = true end
 '''
 match_indent = true
 
@@ -747,12 +749,12 @@ payload = '''
 if effect.Emult_mod then mult = mod_mult(mult^effect.Emult_mod);extras.mult = true end
 if effect.EEmult_mod then mult = mod_mult(mult:arrow(2, effect.EEmult_mod));extras.mult = true end
 if effect.EEEmult_mod then mult = mod_mult(mult:arrow(3, effect.EEEmult_mod));extras.mult = true end
-if effect.hypermult_mod and type(effect.hypermult_mod) == 'table' then mult = mod_mult(mult:arrow(effect.hypermult_mod[1], effect.hypermult_mod[2]));extras.mult = true end
+if effect.hypermult_mod and type(effect.hypermult_mod) == 'cdata' then mult = mod_mult(mult:arrow(effect.hypermult_mod[1], effect.hypermult_mod[2]));extras.mult = true end
 if effect.Xchip_mod then hand_chips = mod_chips(hand_chips*effect.Xchip_mod);extras.hand_chips = true end
 if effect.Echip_mod then hand_chips = mod_chips(hand_chips^effect.Echip_mod);extras.hand_chips = true end
 if effect.EEchip_mod then hand_chips = mod_chips(hand_chips:arrow(2, effect.EEchip_mod));extras.hand_chips = true end
 if effect.EEEchip_mod then hand_chips = mod_chips(hand_chips:arrow(3, effect.EEEchip_mod));extras.hand_chips = true end
-if effect.hyperchip_mod and type(effect.hyperchip_mod) == 'table' then hand_chips = mod_chips(hand_chips:arrow(effect.hyperchip_mod[1], effect.hyperchip_mod[2]));extras.hand_chips = true end
+if effect.hyperchip_mod and type(effect.hyperchip_mod) == 'cdata' then hand_chips = mod_chips(hand_chips:arrow(effect.hyperchip_mod[1], effect.hyperchip_mod[2]));extras.hand_chips = true end
 '''
 match_indent = true
 
@@ -765,12 +767,12 @@ payload = '''
 e_mult = center.config.Emult or 0,
 ee_mult = center.config.EEmult or 0,
 eee_mult = center.config.EEEmult or 0,
-hyper_mult = type(center.config.Hmult) == 'table' and center.config.Hmult or {0, 0},
+hyper_mult = type(center.config.Hmult) == 'cdata' and center.config.Hmult or {0, 0},
 x_chips = center.config.Xchips or 0,
 e_chips = center.config.Echips or 0,
 ee_chips = center.config.EEchips or 0,
 eee_chips = center.config.EEEchips or 0,
-hyper_chips = type(center.config.Hchips) == 'table' and center.config.Hchips or {0, 0},
+hyper_chips = type(center.config.Hchips) == 'cdata' and center.config.Hchips or {0, 0},
 '''
 match_indent = true
 
@@ -801,7 +803,7 @@ if eee_chips > 0 then
 end
 
 local hyper_chips = card:get_chip_hyper_bonus()
-if type(hyper_chips) == 'table' and hyper_chips[1] > 0 and hyper_chips[2] > 0 then
+if type(hyper_chips) == 'cdata' and hyper_chips[1] > 0 and hyper_chips[2] > 0 then
 	ret.hyper_chips = hyper_chips
 end
 
@@ -821,7 +823,7 @@ if eee_mult > 0 then
 end
 
 local hyper_mult = card:get_chip_hyper_mult()
-if type(hyper_mult) == 'table' and hyper_mult[1] > 0 and hyper_mult[2] > 0 then
+if type(hyper_mult) == 'cdata' and hyper_mult[1] > 0 and hyper_mult[2] > 0 then
 	ret.hyper_mult = hyper_mult
 end
 '''
@@ -929,7 +931,7 @@ if effects[ii].eee_chips then
 	update_hand_text({delay = 0}, {chips = hand_chips})
 	card_eval_status_text(G.hand.cards[i], 'eee_chips', effects[ii].eee_chips, percent)
 end
-if effects[ii].hyper_chips and type(effects[ii].hyper_chips) == 'table' then
+if effects[ii].hyper_chips and type(effects[ii].hyper_chips) == 'cdata' then
 	mod_percent = true
 	hand_chips = mod_chips(hand_chips:arrow(effects[ii].hyper_chips[1], effects[ii].hyper_chips[2]))
 	update_hand_text({delay = 0}, {chips = hand_chips})
@@ -953,7 +955,7 @@ if effects[ii].eee_mult then
 	update_hand_text({delay = 0}, {mult = mult})
 	card_eval_status_text(G.hand.cards[i], 'eee_mult', effects[ii].eee_mult, percent)
 end
-if effects[ii].hyper_mult and type(effects[ii].hyper_mult) == 'table' then
+if effects[ii].hyper_mult and type(effects[ii].hyper_mult) == 'cdata' then
 	mod_percent = true
 	mult = mod_mult(mult:arrow(effects[ii].hyper_mult[1], effects[ii].hyper_mult[2]))
 	update_hand_text({delay = 0}, {mult = mult})
@@ -1007,7 +1009,7 @@ if effects[ii].eee_chips then
 	update_hand_text({delay = 0}, {chips = hand_chips})
 	card_eval_status_text(scoring_hand[i], 'eee_chips', effects[ii].eee_chips, percent)
 end
-if effects[ii].hyper_chips and type(effects[ii].hyper_chips) == 'table' then
+if effects[ii].hyper_chips and type(effects[ii].hyper_chips) == 'cdata' then
 	mod_percent = true
 	if effects[ii].card then juice_card(effects[ii].card) end
 	hand_chips = mod_chips(hand_chips:arrow(effects[ii].hyper_chips[1], effects[ii].hyper_chips[2]))
@@ -1035,7 +1037,7 @@ if effects[ii].eee_mult then
 	update_hand_text({delay = 0}, {mult = mult})
 	card_eval_status_text(scoring_hand[i], 'eee_mult', effects[ii].eee_mult, percent)
 end
-if effects[ii].hyper_mult and type(effects[ii].hyper_mult) == 'table' then
+if effects[ii].hyper_mult and type(effects[ii].hyper_mult) == 'cdata' then
 	mod_percent = true
 	if effects[ii].card then juice_card(effects[ii].card) end
 	mult = mod_mult(mult:arrow(effects[ii].hyper_mult[1], effects[ii].hyper_mult[2]))
@@ -1088,7 +1090,7 @@ if scoring_hand and scoring_hand[i] and scoring_hand[i].edition then
 		edition = true,
 		eee_chips = true})
 	end
-	if edi.hyper_chips and type(edi.hyper_chips) == 'table' then
+	if edi.hyper_chips and type(edi.hyper_chips) == 'cdata' then
 		hand_chips = mod_chips(hand_chips:arrow(edi.hyper_chips[1], edi.hyper_chips[2]))
 		update_hand_text({delay = 0}, {chips = hand_chips})
 		card_eval_status_text(trg, 'extra', nil, percent, nil,
@@ -1120,7 +1122,7 @@ if scoring_hand and scoring_hand[i] and scoring_hand[i].edition then
 		edition = true,
 		eee_mult = true})
 	end
-	if edi.hyper_mult and type(edi.hyper_mult) == 'table' then
+	if edi.hyper_mult and type(edi.hyper_mult) == 'cdata' then
 		mult = mod_mult(mult:arrow(edi.hyper_mult[1], edi.hyper_mult[2]))
 		update_hand_text({delay = 0}, {mult = mult})
 		card_eval_status_text(trg, 'extra', nil, percent, nil,
@@ -1183,7 +1185,7 @@ if G.jokers.cards and G.jokers.cards[i] and G.jokers.cards[i].edition then
 		edition = true,
 		eee_chips = true})
 	end
-	if edi.hyper_chips and type(edi.hyper_chips) == 'table' then
+	if edi.hyper_chips and type(edi.hyper_chips) == 'cdata' then
 		hand_chips = mod_chips(hand_chips:arrow(edi.hyper_chips[1], edi.hyper_chips[2]))
 		update_hand_text({delay = 0}, {chips = hand_chips})
 		card_eval_status_text(trg, 'extra', nil, percent, nil,
@@ -1215,7 +1217,7 @@ if G.jokers.cards and G.jokers.cards[i] and G.jokers.cards[i].edition then
 		edition = true,
 		eee_mult = true})
 	end
-	if edi.hyper_mult and type(edi.hyper_mult) == 'table' then
+	if edi.hyper_mult and type(edi.hyper_mult) == 'cdata' then
 		mult = mod_mult(mult:arrow(edi.hyper_mult[1], edi.hyper_mult[2]))
 		update_hand_text({delay = 0}, {mult = mult})
 		card_eval_status_text(trg, 'extra', nil, percent, nil,
@@ -1292,7 +1294,7 @@ pattern = 'CHANNEL = love.thread.getChannel("save_request")'
 position = 'after'
 payload = '''
 function tal_compress_and_save(_file, _data, talisman)
-  local save_string = type(_data) == 'table' and STR_PACK(_data) or _data
+  local save_string = type(_data) == 'cdata' and STR_PACK(_data) or _data
   local fallback_save = STR_PACK({GAME = {won = true}}) --just bare minimum to not crash, maybe eventually display some info?
   if talisman == 'bignumber' then
     fallback_save = "if not BigMeta then " .. fallback_save
@@ -1429,7 +1431,7 @@ target = 'engine/sprite.lua'
 pattern = "G.SHADERS[_shader]:send(v.name, v.val or (v.func and v.func()) or v.ref_table[v.ref_value])"
 position = 'at'
 payload = '''local val = v.val or (v.func and v.func()) or v.ref_table[v.ref_value]
-if type(val) == "table" and is_number(val) then
+if type(val) == "cdata" and is_number(val) then
 	if val > to_big(1e300) then
 		val = 1e300
 	else
@@ -1446,14 +1448,14 @@ target = 'functions/misc_functions.lua'
 pattern = "AC[k].vol = (not G.video_organ and G.STATE == G.STATES.SPLASH) and 0 or AC[k].vol and v.volfunc(AC[k].vol) or 0"
 position = 'after'
 payload = '''
-if type(AC[k].vol) == "table" then
+if type(AC[k].vol) == "cdata" then
 	if AC[k].vol > to_big(1e300) then
 		AC[k].vol = 1e300
 	else
 		AC[k].vol = to_number(AC[k].vol)
 	end
 end
-if type(AC[k].per) == "table" then
+if type(AC[k].per) == "cdata" then
 	if AC[k].per > to_big(1e300) then
 		AC[k].per = 1e300
 	else
@@ -1468,7 +1470,7 @@ match_indent = true
 target = 'functions/button_callbacks.lua'
 pattern = "_F.intensity = ((G.pack_cards and not G.pack_cards.REMOVED) or (G.TAROT_INTERRUPT)) and 0 or math.max(0., math.log(G.ARGS.score_intensity.earned_score, 5)-2)"
 position = 'after'
-payload = '''if type(_F.intensity) == "table" then
+payload = '''if type(_F.intensity) == "cdata" then
 	if _F.intensity > to_big(1e300) then
 		_F.intensity = 1e300
 	else

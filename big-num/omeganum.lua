@@ -1,14 +1,28 @@
---OmegaNum port by Mathguy
-Big = {
-    array = {},
-    sign = 1
-}
+local ffi = require"ffi"
+
+-- omeganums are stored in a big array (which due to GC becomes a hashmap of integers)
+ffi.cdef[[typedef struct OmegaNum { double pos_in_arr; } OmegaNum;]]
+OmegaCType = ffi.typeof"OmegaNum"
+
+OMEGA_LIST = {}
+OMEGA_ID = 1
 
 maxArrow = 1e3
 
 OmegaMeta = {}
-OmegaMeta.__index = Big
+OmegaMeta.__index = function(self, ind)
+    if ind == "array" or ind == "sign" then
+        return OMEGA_LIST[self.pos_in_arr][ind]
+    end
+    return Big[ind]
+end
 
+OmegaMeta.__newindex = function(self, ind, val)
+    OMEGA_LIST[self.pos_in_arr][ind] = val
+end
+Big = {}
+
+COmega = ffi.metatype(OmegaCType, OmegaMeta)
 external = true
 
 omegaNumError = "[OmegaNumError] "
@@ -83,7 +97,10 @@ function Big:arraySize()
 end
 
 function Big:new(arr)
-    return setmetatable({array = arr, sign = 1}, OmegaMeta):normalize()
+    local new_type = ffi.new(COmega, OMEGA_ID)
+    OMEGA_LIST[OMEGA_ID] = {array = arr, sign = 1}
+    OMEGA_ID = OMEGA_ID + 1
+    return new_type:normalize()
 end
 
 function Big:isNaN()
@@ -221,7 +238,7 @@ end
 function Big:normalize()
     local b = nil
     local x = self
-    if ((x.array == nil) or (type(x.array) ~= "table") or (x:arraySize() == 0)) then
+    if ((x.array == nil) or (type(x.array) ~= "cdata") or (x:arraySize() == 0)) then
         x.array = {0}
     end
     if (x:arraySize() == 1) and (x.array[1] == 0) then
@@ -572,7 +589,7 @@ function Big:to_number()
             end
         end
     end
-    if (type(self.array[1]) == "table") then
+    if (type(self.array[1]) == "cdata") then
         self.array[1] = self.array[1]:to_number()
     end
     if (self.array[2]==1) then
@@ -610,7 +627,7 @@ function Big:create(input)
         return Big:new({input})
     elseif ((type(input) == "string")) then
         return Big:parse(input)
-    elseif ((type(input) == "table") and getmetatable(input) == OmegaMeta) then
+    elseif ((type(input) == "cdata") and ffi.typeof(input) == OmegaCType) then
         return input:clone()
     else
         return Big:new(input)
@@ -618,7 +635,7 @@ function Big:create(input)
 end
 
 function Big:ensureBig(input)
-    if ((type(input) == "table") and getmetatable(input) == OmegaMeta) then
+    if ((type(input) == "cdata") and ffi.typeof(input) == OmegaCType) then
         return input
     else
         return Big:create(input)
@@ -1135,7 +1152,7 @@ function Big:tetrate(other)
 end
 
 function Big:max_for_op(arrows)
-    if type(arrows) == "table" then
+    if type(arrows) == "cdata" then
         arrows = arrows:to_number()
     end
     if arrows < 1 or arrows ~= arrows or arrows == R.POSITIVE_INFINITY then
@@ -1382,6 +1399,10 @@ function Big:d_lambertw(z)
 end
 
 ------------------------metastuff----------------------------
+
+function OmegaMeta.__gc(self)
+    OMEGA_LIST[self.pos_in_arr] = nil
+end
 
 function OmegaMeta.__add(b1, b2)
     if type(b1) == "number" then

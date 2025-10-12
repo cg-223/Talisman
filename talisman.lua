@@ -1,5 +1,6 @@
 local lovely = require("lovely")
 local nativefs = require("nativefs")
+local ffi = require("ffi")
 
 local info = nativefs.getDirectoryItemsInfo(lovely.mod_dir)
 local talisman_path = ""
@@ -143,7 +144,7 @@ if Talisman.config_file.break_infinity then
 
   local nf = number_format
   function number_format(num, e_switch_point)
-      if type(num) == 'table' then
+      if type(num) == 'cdata' then
           --num = to_big(num)
           if num.str then return num.str end
           if num:arraySize() > 2 then
@@ -162,12 +163,12 @@ if Talisman.config_file.break_infinity then
 
   local mf = math.floor
   function math.floor(x)
-      if type(x) == 'table' then return x.floor and x:floor() or x end
+      if type(x) == 'cdata' then return x.floor and x:floor() or x end
       return mf(x)
   end
   local mc = math.ceil
   function math.ceil(x)
-      if type(x) == 'table' then return x:ceil() end
+      if type(x) == 'cdata' then return x:ceil() end
       return mc(x)
   end
 
@@ -183,7 +184,7 @@ function lenient_bignum(x)
   local sns = score_number_scale
   function score_number_scale(scale, amt)
     local ret = sns(scale, amt)
-    if type(ret) == "table" then
+    if type(ret) == "cdata" then
       if ret > to_big(1e300) then return 1e300 end
       return ret:to_number()
     end
@@ -192,7 +193,7 @@ function lenient_bignum(x)
 
   local gftsj = G.FUNCS.text_super_juice
   function G.FUNCS.text_super_juice(e, _amount)
-    if type(_amount) == "table" then
+    if type(_amount) == "cdata" then
       if _amount > to_big(1e300) then
         _amount = 1e300
       else
@@ -204,7 +205,7 @@ function lenient_bignum(x)
 
   local l10 = math.log10
   function math.log10(x)
-      if type(x) == 'table' then 
+      if type(x) == 'cdata' then 
         if x.log10 then return lenient_bignum(x:log10()) end
         return lenient_bignum(l10(math.min(x:to_number(),1e300)))
       end
@@ -214,7 +215,7 @@ function lenient_bignum(x)
   local lg = math.log
   function math.log(x, y)
       if not y then y = 2.718281828459045 end
-      if type(x) == 'table' then 
+      if type(x) == 'cdata' then 
         if x.log then return lenient_bignum(x:log(to_big(y))) end
         if x.logBase then return lenient_bignum(x:logBase(to_big(y))) end
         return lenient_bignum(lg(math.min(x:to_number(),1e300),y))
@@ -341,7 +342,7 @@ function lenient_bignum(x)
     if not G.PROFILES[G.SETTINGS.profile].career_stats[stat] then G.PROFILES[G.SETTINGS.profile].career_stats[stat] = 0 end
     G.PROFILES[G.SETTINGS.profile].career_stats[stat] = G.PROFILES[G.SETTINGS.profile].career_stats[stat] + (mod or 0)
     -- Make sure this isn't ever a talisman number
-    if type(G.PROFILES[G.SETTINGS.profile].career_stats[stat]) == 'table' then
+    if type(G.PROFILES[G.SETTINGS.profile].career_stats[stat]) == 'cdata' then
       if G.PROFILES[G.SETTINGS.profile].career_stats[stat] > to_big(1e300) then
         G.PROFILES[G.SETTINGS.profile].career_stats[stat] = to_big(1e300)
       elseif G.PROFILES[G.SETTINGS.profile].career_stats[stat] < to_big(-1e300) then
@@ -387,7 +388,7 @@ function lenient_bignum(x)
 
   local tsj = G.FUNCS.text_super_juice
   function G.FUNCS.text_super_juice(e, _amount)
-    if type(_amount) == 'table' then
+    if type(_amount) == 'cdata' then
       if _amount > to_big(2) then _amount = 2 end
     else
       if _amount > 2 then _amount = 2 end
@@ -398,7 +399,7 @@ function lenient_bignum(x)
   local max = math.max
   --don't return a Big unless we have to - it causes nativefs to break
   function math.max(x, y)
-    if type(x) == 'table' or type(y) == 'table' then
+    if type(x) == 'cdata' or type(y) == 'cdata' then
     x = to_big(x)
     y = to_big(y)
     if (x > y) then
@@ -411,7 +412,7 @@ function lenient_bignum(x)
 
   local min = math.min
   function math.min(x, y)
-    if type(x) == 'table' or type(y) == 'table' then
+    if type(x) == 'cdata' or type(y) == 'cdata' then
     x = to_big(x)
     y = to_big(y)
     if (x < y) then
@@ -424,9 +425,8 @@ function lenient_bignum(x)
 
   local sqrt = math.sqrt
   function math.sqrt(x)
-    if type(x) == 'table' then
-      if getmetatable(x) == BigMeta then return x:sqrt() end
-      if getmetatable(x) == OmegaMeta then return x:pow(0.5) end
+    if type(x) == 'cdata' then
+      if ffi.typeof(x) == OmegaCType then return x:pow(0.5) end
     end
     return sqrt(x)
   end
@@ -435,7 +435,7 @@ function lenient_bignum(x)
 
   local old_abs = math.abs
   function math.abs(x)
-    if type(x) == 'table' then
+    if type(x) == 'cdata' then
     x = to_big(x)
     if (x < to_big(0)) then
       return -1 * x
@@ -448,17 +448,14 @@ end
 
 function is_number(x)
   if type(x) == 'number' then return true end
-  if type(x) == 'table' and ((x.e and x.m) or (x.array and x.sign)) then return true end
+  if type(x) == 'cdata' and ((x.e and x.m) or (x.array and x.sign)) then return true end
   return false
 end
 
 function to_big(x, y)
   if type(x) == 'string' and x == "0" then --hack for when 0 is asked to be a bignumber need to really figure out the fix
     return 0
-  elseif Big and Big.m then
-    local x = Big:new(x,y)
-    return x
-  elseif Big and Big.array then
+  elseif Big then
     local result = Big:create(x)
     result.sign = y or result.sign or x.sign or 1
     return result
@@ -478,7 +475,7 @@ function to_big(x, y)
   end
 end
 function to_number(x)
-  if type(x) == 'table' and (getmetatable(x) == BigMeta or getmetatable(x) == OmegaMeta) then
+  if type(x) == 'cdata' and (ffi.typeof(x) == OmegaCType) then
     return x:to_number()
   else
     return x
@@ -730,7 +727,7 @@ if not Talisman.F_NO_COROUTINE then
     Talisman.calculating_joker = true
     local ret, trig = ccj(self, context)
 
-    if ret and type(ret) == "table" and ret.repetitions then
+    if ret and type(ret) == "cdata" and ret.repetitions then
       if not ret.card then
         G.CARD_CALC_COUNTS.other = G.CARD_CALC_COUNTS.other or {1,1}
         G.CARD_CALC_COUNTS.other[2] = G.CARD_CALC_COUNTS.other[2] + ret.repetitions
@@ -992,7 +989,7 @@ if SMODS and SMODS.calculate_individual_effect then
       return true
     end
 
-    if (key == 'hyper_chips' or key == 'hyperchips' or key == 'hyperchip_mod') and type(amount) == 'table' then
+    if (key == 'hyper_chips' or key == 'hyperchips' or key == 'hyperchip_mod') and type(amount) == 'cdata' then
       if effect.card then juice_card(effect.card) end
       if SMODS.Scoring_Parameters then
         local chips = SMODS.Scoring_Parameters["chips"]
@@ -1084,7 +1081,7 @@ if SMODS and SMODS.calculate_individual_effect then
       return true
     end
 
-    if (key == 'hyper_mult' or key == 'hypermult' or key == 'hypermult_mod') and type(amount) == 'table' then
+    if (key == 'hyper_mult' or key == 'hypermult' or key == 'hypermult_mod') and type(amount) == 'cdata' then
       if effect.card then juice_card(effect.card) end
       if SMODS.Scoring_Parameters then
         local mult = SMODS.Scoring_Parameters["mult"]
